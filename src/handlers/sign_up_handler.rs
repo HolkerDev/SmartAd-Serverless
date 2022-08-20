@@ -1,13 +1,13 @@
-use aws_lambda_events::encodings::Body;
 use aws_lambda_events::event::apigw::{
     ApiGatewayProxyRequest as AwsRequest, ApiGatewayProxyResponse as AwsResponse,
 };
-use lambda_http::http::{HeaderMap, StatusCode};
-use log::{warn};
-use super::utils::StatusCodeExt;
+use lambda_http::http:: StatusCode;
+use log::warn;
 use serde_json::json;
 
 use crate::models::{ConfirmationCode, UserSignUp};
+
+use super::utils::response;
 
 type E = Box<dyn std::error::Error + Sync + Send + 'static>;
 
@@ -40,19 +40,10 @@ pub async fn handle_sign_up(
 }
 
 
-pub fn response(status: StatusCode, json_body: String) -> AwsResponse {
-    AwsResponse {
-        status_code: status.as_i64(),
-        headers: HeaderMap::new(),
-        multi_value_headers: HeaderMap::new(),
-        body: Some(Body::Text(json_body)),
-        is_base64_encoded: Some(false),
-    }
-}
-
 #[cfg(test)]
 mod tests {
     use aws_lambda_events::apigw::ApiGatewayProxyRequest;
+
     use crate::handlers::sign_up_handler::handle_sign_up;
     use crate::models::UserSignUp;
 
