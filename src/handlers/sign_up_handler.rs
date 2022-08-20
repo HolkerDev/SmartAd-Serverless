@@ -11,9 +11,7 @@ use super::utils::response;
 
 type E = Box<dyn std::error::Error + Sync + Send + 'static>;
 
-pub async fn handle_sign_up(
-    event: AwsRequest,
-) -> Result<AwsResponse, E> {
+pub async fn handle_sign_up(event: AwsRequest) -> Result<AwsResponse, E> {
     let user_sign_up: UserSignUp = match serde_json::from_str(event.body.unwrap().as_str()) {
         Ok(Some(user_sign_up)) => user_sign_up,
         Err(err) => {
@@ -36,20 +34,31 @@ pub async fn handle_sign_up(
 
     //TODO: Generate confirmation code
 
-    Ok(response(StatusCode::OK, json!(ConfirmationCode{ code: String::from("123456")}).to_string()))
+    Ok(response(
+        StatusCode::OK,
+        json!(ConfirmationCode {
+            code: String::from("123456")
+        })
+        .to_string(),
+    ))
 }
-
 
 #[cfg(test)]
 mod tests {
+    use super::super::utils::*;
     use crate::handlers::sign_up_handler::handle_sign_up;
     use crate::models::UserSignUp;
-    use super::super::utils::*;
 
     #[tokio::test]
     async fn test_something() {
         let mut req = request();
-        req.body = Some(serde_json::to_string(&UserSignUp { email: String::from("something"), password: String::from("pass") }).unwrap());
+        req.body = Some(
+            serde_json::to_string(&UserSignUp {
+                email: String::from("something"),
+                password: String::from("pass"),
+            })
+            .unwrap(),
+        );
         let res = handle_sign_up(req.clone()).await;
         assert_eq!(res.unwrap().status_code, 200);
     }
