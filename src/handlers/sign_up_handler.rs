@@ -42,7 +42,6 @@ pub async fn handle_sign_up(
 
 #[cfg(test)]
 mod tests {
-    use std::borrow::BorrowMut;
     use crate::handlers::sign_up_handler::handle_sign_up;
     use crate::models::UserSignUp;
     use super::super::utils::*;
