@@ -1,15 +1,19 @@
-use lambda_http::{IntoResponse, Request, RequestExt, Response};
-use lambda_http::http::StatusCode;
+use aws_lambda_events::encodings::Body;
+use aws_lambda_events::event::apigw::{
+    ApiGatewayProxyRequest as AwsRequest, ApiGatewayProxyResponse as AwsResponse,
+};
+use lambda_http::http::{HeaderMap, StatusCode};
+use log::{warn};
 use serde_json::json;
-use log::{info, warn};
+
 use crate::models::{ConfirmationCode, UserSignUp};
 
 type E = Box<dyn std::error::Error + Sync + Send + 'static>;
 
 pub async fn handle_sign_up(
-    event: Request,
-) -> Result<impl IntoResponse, E> {
-    let user_sign_up: UserSignUp = match event.payload() {
+    event: AwsRequest,
+) -> Result<AwsResponse, E> {
+    let user_sign_up: UserSignUp = match serde_json::from_str(event.body.unwrap().as_str()) {
         Ok(Some(user_sign_up)) => user_sign_up,
         Err(err) => {
             warn!("Failed to parse sign up user from request body: {}", err);
@@ -34,11 +38,50 @@ pub async fn handle_sign_up(
     Ok(response(StatusCode::OK, json!(ConfirmationCode{ code: String::from("123456")}).to_string()))
 }
 
-/// HTTP Response with a JSON payload
-fn response(status_code: StatusCode, body: String) -> Response<String> {
-    Response::builder()
-        .status(status_code)
-        .header("Content-Type", "application/json")
-        .body(body)
-        .unwrap()
+
+pub fn response(status: StatusCode, json_body: String) -> AwsResponse {
+    AwsResponse {
+        status_code: status.as_i64(),
+        headers: HeaderMap::new(),
+        multi_value_headers: HeaderMap::new(),
+        body: Some(Body::Text(json_body)),
+        is_base64_encoded: Some(false),
+    }
+}
+
+trait StatusCodeExt {
+    fn as_i64(&self) -> i64;
+}
+
+impl StatusCodeExt for StatusCode {
+    fn as_i64(&self) -> i64 {
+        self.as_str().parse::<i64>().unwrap()
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use aws_lambda_events::apigw::ApiGatewayProxyRequest;
+    use crate::handlers::sign_up_handler::handle_sign_up;
+    use crate::models::UserSignUp;
+
+    #[tokio::test]
+    async fn test_something() {
+        let res = handle_sign_up(
+            ApiGatewayProxyRequest {
+                resource: None,
+                path: None,
+                http_method: Default::default(),
+                headers: Default::default(),
+                multi_value_headers: Default::default(),
+                query_string_parameters: Default::default(),
+                multi_value_query_string_parameters: Default::default(),
+                path_parameters: Default::default(),
+                stage_variables: Default::default(),
+                request_context: Default::default(),
+                body: Some(serde_json::to_string(&UserSignUp { email: String::from("something"), password: String::from("pass") }).unwrap()),
+                is_base64_encoded: None,
+            }).await;
+        assert_eq!(res.unwrap().status_code, 200);
+    }
 }
