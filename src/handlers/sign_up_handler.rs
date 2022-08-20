@@ -4,6 +4,7 @@ use aws_lambda_events::event::apigw::{
 };
 use lambda_http::http::{HeaderMap, StatusCode};
 use log::{warn};
+use super::utils::StatusCodeExt;
 use serde_json::json;
 
 use crate::models::{ConfirmationCode, UserSignUp};
@@ -46,16 +47,6 @@ pub fn response(status: StatusCode, json_body: String) -> AwsResponse {
         multi_value_headers: HeaderMap::new(),
         body: Some(Body::Text(json_body)),
         is_base64_encoded: Some(false),
-    }
-}
-
-trait StatusCodeExt {
-    fn as_i64(&self) -> i64;
-}
-
-impl StatusCodeExt for StatusCode {
-    fn as_i64(&self) -> i64 {
-        self.as_str().parse::<i64>().unwrap()
     }
 }
 
