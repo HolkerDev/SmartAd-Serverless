@@ -33,7 +33,7 @@ mod tests {
     use crate::models::UserSignUp;
 
     #[tokio::test]
-    async fn test_something() {
+    async fn should_return_ok_when_form_is_ok() {
         let req = request_new(
             serde_json::to_string(&UserSignUp {
                 email: String::from("something"),

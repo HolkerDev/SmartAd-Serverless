@@ -1,0 +1,32 @@
+service: smartad
+provider:
+  name: aws
+  runtime: rust
+  region: eu-central-1
+
+disabledDeprecations:
+  - '*'
+
+plugins:
+  # this registers the plugin
+  # with serverless
+  - serverless-rust
+# creates one artifact for each function
+custom:
+  rust:
+    dockerless: true
+    target: aarch64-apple-darwin
+    linker: clang
+package:
+  individually: true
+functions:
+  # handler value syntax is `{cargo-package-name}.{bin-name}`
+  # or `{cargo-package-name}` for short when you are building a
+  # default bin for a given package.
+  registration:
+    handler: smartad.sign_up_user
+    events:
+      - http:
+          path: user/register
+          method: POST
+
