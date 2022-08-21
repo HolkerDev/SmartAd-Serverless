@@ -1165,9 +1165,8 @@ version = "0.1.0"
 dependencies = [
  "aws-config",
  "aws-sdk-dynamodb",
- "aws_lambda_events",
+ "http",
  "lambda_http",
- "lambda_runtime",
  "log",
  "serde",
  "serde_json",

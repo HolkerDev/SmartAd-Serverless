@@ -1,32 +1,18 @@
-use aws_lambda_events::event::apigw::{
-    ApiGatewayProxyRequest as AwsRequest, ApiGatewayProxyResponse as AwsResponse,
-};
+use lambda_http::{Body, Error, IntoResponse, Request, RequestExt, Response};
 use lambda_http::http::StatusCode;
-use log::warn;
 use serde_json::json;
-
 use crate::models::{ConfirmationCode, UserSignUp};
 
-use super::utils::response;
+// type E = Box<dyn std::error::Error + Sync + Send + 'static>;
 
-type E = Box<dyn std::error::Error + Sync + Send + 'static>;
-
-pub async fn handle_sign_up(event: AwsRequest) -> Result<AwsResponse, E> {
-    let user_sign_up: UserSignUp = match serde_json::from_str(event.body.unwrap().as_str()) {
+pub async fn handle_sign_up(event: Request) -> Result<impl IntoResponse, Error> {
+    let _user_sign_up: UserSignUp = match event.payload() {
         Ok(Some(user_sign_up)) => user_sign_up,
-        Err(err) => {
-            warn!("Failed to parse sign up user from request body: {}", err);
-            return Ok(response(
-                StatusCode::BAD_REQUEST,
-                json!({"message": "Failed to parse request body"}).to_string(),
-            ));
+        Err(_err) => {
+            return Ok(Response::builder().status(StatusCode::BAD_REQUEST).body(Body::from(json!({"message": "Failed to parse request body"}).to_string())).unwrap());
         }
         Ok(None) => {
-            warn!("Missing user sign up in request body");
-            return Ok(response(
-                StatusCode::BAD_REQUEST,
-                json!({"message": "Wrong body structure"}).to_string(),
-            ));
+            return Ok(Response::builder().status(StatusCode::BAD_REQUEST).body(Body::from(json!({"message": "Wrong body structure"}).to_string())).unwrap());
         }
     };
 
@@ -34,32 +20,28 @@ pub async fn handle_sign_up(event: AwsRequest) -> Result<AwsResponse, E> {
 
     //TODO: Generate confirmation code
 
-    Ok(response(
-        StatusCode::OK,
-        json!(ConfirmationCode {
-            code: String::from("123456")
-        })
-        .to_string(),
-    ))
+    Ok(Response::builder().status(StatusCode::OK).body(Body::from(json!(ConfirmationCode {code: String::from("123456")}).to_string())).unwrap())
 }
 
 #[cfg(test)]
 mod tests {
+    use lambda_http::{IntoResponse};
+    use lambda_http::http::StatusCode;
+
     use super::super::utils::*;
-    use crate::handlers::sign_up_handler::handle_sign_up;
+    use crate::handlers::sign_up_handler::{handle_sign_up};
     use crate::models::UserSignUp;
 
     #[tokio::test]
     async fn test_something() {
-        let mut req = request();
-        req.body = Some(
+        let req = request_new(
             serde_json::to_string(&UserSignUp {
                 email: String::from("something"),
                 password: String::from("pass"),
             })
             .unwrap(),
         );
-        let res = handle_sign_up(req.clone()).await;
-        assert_eq!(res.unwrap().status_code, 200);
+        let res = handle_sign_up(req).await.unwrap().into_response().await;
+        assert_eq!(res.status(), StatusCode::OK);
     }
 }
