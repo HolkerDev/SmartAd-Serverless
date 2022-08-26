@@ -1,4 +1,4 @@
-use lambda_http::{Error, service_fn};
+use lambda_http::{service_fn, Error};
 use smartad::handlers::sign_up_handler::handle_sign_up;
 
 #[tokio::main]
