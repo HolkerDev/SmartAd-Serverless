@@ -36,7 +36,7 @@ pub async fn handle_sign_up(event: Request) -> Result<impl IntoResponse, Error> 
         .send()
         .await?;
 
-    if existing_user.item().is_none() {
+    if existing_user.item().is_some() {
         return Ok(response(
             StatusCode::CONFLICT,
             json!({"message": "This email is already taken"}).to_string(),
