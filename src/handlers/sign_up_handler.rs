@@ -3,7 +3,7 @@ use aws_sdk_dynamodb::Client;
 use bcrypt::{hash, DEFAULT_COST};
 use lambda_http::http::StatusCode;
 use lambda_http::{Body, Error, IntoResponse, Request, RequestExt, Response};
-use serde_json::json;
+use serde_json::{json, Value};
 
 use crate::models::{ConfirmationCode, UserSignUp};
 
@@ -11,20 +11,16 @@ pub async fn handle_sign_up(event: Request) -> Result<impl IntoResponse, Error> 
     let user_sign_up: UserSignUp = match event.payload() {
         Ok(Some(user_sign_up)) => user_sign_up,
         Err(_err) => {
-            return Ok(Response::builder()
-                .status(StatusCode::BAD_REQUEST)
-                .body(Body::from(
-                    json!({"message": "Failed to parse request body"}).to_string(),
-                ))
-                .unwrap());
+            return Ok(response(
+                StatusCode::BAD_REQUEST,
+                json!({"message": "Failed to parse request body"}).to_string(),
+            ));
         }
         Ok(None) => {
-            return Ok(Response::builder()
-                .status(StatusCode::BAD_REQUEST)
-                .body(Body::from(
-                    json!({"message": "Wrong body structure"}).to_string(),
-                ))
-                .unwrap());
+            return Ok(response(
+                StatusCode::BAD_REQUEST,
+                json!({"message": "Wrong body structure"}).to_string(),
+            ));
         }
     };
 
@@ -50,20 +46,25 @@ pub async fn handle_sign_up(event: Request) -> Result<impl IntoResponse, Error> 
 
     //TODO: Generate confirmation code and save it
 
-    Ok(Response::builder()
-        .status(StatusCode::OK)
-        .body(Body::from(
-            json!(ConfirmationCode {
-                code: "123456".into()
-            })
-            .to_string(),
-        ))
-        .unwrap())
+    Ok(response(
+        StatusCode::CREATED,
+        json!(ConfirmationCode {
+            code: "123456".into()
+        })
+        .to_string(),
+    ))
 }
 
 async fn init_db() -> Client {
     let shared_config = aws_config::load_from_env().await;
     Client::new(&shared_config)
+}
+
+fn response(status_code: StatusCode, json_string: String) -> Response<Body> {
+    Response::builder()
+        .status(status_code)
+        .body(Body::from(json_string))
+        .unwrap()
 }
 
 #[cfg(test)]
@@ -86,6 +87,6 @@ mod tests {
             .unwrap(),
         );
         let res = handle_sign_up(req).await.unwrap().into_response().await;
-        assert_eq!(res.status(), StatusCode::OK);
+        assert_eq!(res.status(), StatusCode::CREATED);
     }
 }
