@@ -1,8 +1,8 @@
-use aws_sdk_dynamodb::Client;
 use aws_sdk_dynamodb::model::AttributeValue;
-use bcrypt::{DEFAULT_COST, hash};
-use lambda_http::{Body, Error, IntoResponse, Request, RequestExt, Response};
+use aws_sdk_dynamodb::Client;
+use bcrypt::{hash, DEFAULT_COST};
 use lambda_http::http::StatusCode;
+use lambda_http::{Body, Error, IntoResponse, Request, RequestExt, Response};
 use serde_json::json;
 
 use crate::models::{ConfirmationCode, UserSignUp};
@@ -30,15 +30,21 @@ pub async fn handle_sign_up(event: Request) -> Result<impl IntoResponse, Error> 
 
     let client = init_db().await;
 
-
     //TODO: Check if user email unique
 
-    let _result = client.put_item()
+    let _result = client
+        .put_item()
         .table_name("smartad")
-        .item("pk", AttributeValue::S(format!("user#{}", user_sign_up.email)))
+        .item(
+            "pk",
+            AttributeValue::S(format!("user#{}", user_sign_up.email)),
+        )
         .item("sk", AttributeValue::S("none".into()))
         .item("email", AttributeValue::S(user_sign_up.email))
-        .item("password", AttributeValue::S(hash(user_sign_up.password, DEFAULT_COST).unwrap()))
+        .item(
+            "password",
+            AttributeValue::S(hash(user_sign_up.password, DEFAULT_COST).unwrap()),
+        )
         .send()
         .await;
 
@@ -49,7 +55,8 @@ pub async fn handle_sign_up(event: Request) -> Result<impl IntoResponse, Error> 
         .body(Body::from(
             json!(ConfirmationCode {
                 code: "123456".into()
-            }).to_string(),
+            })
+            .to_string(),
         ))
         .unwrap())
 }
@@ -76,7 +83,7 @@ mod tests {
                 email: "something".into(),
                 password: "pass".into(),
             })
-                .unwrap(),
+            .unwrap(),
         );
         let res = handle_sign_up(req).await.unwrap().into_response().await;
         assert_eq!(res.status(), StatusCode::OK);
