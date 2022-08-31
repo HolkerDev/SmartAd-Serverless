@@ -96,7 +96,7 @@ fn generate_confirmation_code() -> String {
 
 fn generate_random_code_number(mut random: ThreadRng) -> String {
     // let mut random = rand::thread_rng();
-    random.gen_range(0..9).to_string()
+    random.gen_range(0..10).to_string()
 }
 
 #[cfg(test)]
