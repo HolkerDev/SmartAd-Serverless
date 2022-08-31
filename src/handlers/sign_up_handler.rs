@@ -3,7 +3,7 @@ use aws_sdk_dynamodb::Client;
 use bcrypt::{hash, DEFAULT_COST};
 use lambda_http::http::StatusCode;
 use lambda_http::{Body, Error, IntoResponse, Request, RequestExt, Response};
-use serde_json::{json, Value};
+use serde_json::json;
 
 use crate::models::{ConfirmationCode, UserSignUp};
 
@@ -26,7 +26,22 @@ pub async fn handle_sign_up(event: Request) -> Result<impl IntoResponse, Error> 
 
     let client = init_db().await;
 
-    //TODO: Check if user email unique
+    let existing_user = client
+        .get_item()
+        .table_name("smartad")
+        .key(
+            "pk",
+            AttributeValue::S(format!("user#{}", user_sign_up.email)),
+        )
+        .send()
+        .await?;
+
+    if existing_user.item().is_none() {
+        return Ok(response(
+            StatusCode::CONFLICT,
+            json!({"message": "This email is already taken"}).to_string(),
+        ));
+    }
 
     let _result = client
         .put_item()
