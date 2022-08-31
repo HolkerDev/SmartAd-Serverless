@@ -3,6 +3,8 @@ use aws_sdk_dynamodb::Client;
 use bcrypt::{hash, DEFAULT_COST};
 use lambda_http::http::StatusCode;
 use lambda_http::{Body, Error, IntoResponse, Request, RequestExt, Response};
+use rand::rngs::ThreadRng;
+use rand::Rng;
 use serde_json::json;
 
 use crate::models::{ConfirmationCode, UserSignUp};
@@ -65,7 +67,7 @@ pub async fn handle_sign_up(event: Request) -> Result<impl IntoResponse, Error> 
     Ok(response(
         StatusCode::CREATED,
         json!(ConfirmationCode {
-            code: "123456".into()
+            code: generate_confirmation_code()
         })
         .to_string(),
     ))
@@ -83,11 +85,26 @@ fn response(status_code: StatusCode, json_string: String) -> Response<Body> {
         .unwrap()
 }
 
+fn generate_confirmation_code() -> String {
+    let random = rand::thread_rng();
+    let mut code = "".to_string();
+    for _ in 0..6 {
+        code.push_str(&generate_random_code_number(random.clone()))
+    }
+    code
+}
+
+fn generate_random_code_number(mut random: ThreadRng) -> String {
+    // let mut random = rand::thread_rng();
+    random.gen_range(0..9).to_string()
+}
+
 #[cfg(test)]
 mod tests {
     use lambda_http::http::StatusCode;
     use lambda_http::IntoResponse;
 
+    use crate::handlers::sign_up_handler::generate_confirmation_code;
     use crate::handlers::sign_up_handler::handle_sign_up;
     use crate::models::UserSignUp;
 
@@ -104,5 +121,11 @@ mod tests {
         );
         let res = handle_sign_up(req).await.unwrap().into_response().await;
         assert_eq!(res.status(), StatusCode::CREATED);
+    }
+
+    #[tokio::test]
+    async fn should_generate_six_numbers_code() {
+        let code = generate_confirmation_code();
+        assert_eq!(code.len(), 6);
     }
 }
