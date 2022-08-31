@@ -33,6 +33,7 @@ pub async fn handle_sign_up(event: Request) -> Result<impl IntoResponse, Error> 
             "pk",
             AttributeValue::S(format!("user#{}", user_sign_up.email)),
         )
+        .key("sk", AttributeValue::S("none".into()))
         .send()
         .await?;
 
