@@ -46,7 +46,7 @@ pub async fn handle_sign_up(event: Request) -> Result<impl IntoResponse, Error> 
         ));
     }
 
-    let save_user_request = client
+    let _ = client
         .put_item()
         .table_name("smartad")
         .item(
