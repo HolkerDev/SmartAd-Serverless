@@ -8,16 +8,18 @@ pub struct UserSignUp {
 }
 
 #[derive(Deserialize, Serialize)]
+pub struct ConfirmRegistration {
+    pub email: String,
+    pub code: String,
+}
+
+#[derive(Deserialize, Serialize)]
 pub struct ConfirmationCode {
     pub code: String,
 }
 
-trait ConfirmationCodeConstructor {
-    fn new(code: String) -> ConfirmationCode;
-}
-
-impl ConfirmationCodeConstructor for ConfirmationCode {
-    fn new(code: String) -> ConfirmationCode {
+impl ConfirmationCode {
+    pub fn new(code: String) -> ConfirmationCode {
         ConfirmationCode { code }
     }
 }
