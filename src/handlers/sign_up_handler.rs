@@ -33,7 +33,7 @@ pub async fn handle_sign_up(event: Request) -> Result<impl IntoResponse, Error> 
         .table_name("smartad")
         .key(
             "pk",
-            AttributeValue::S(format!("user#{}", user_sign_up.email)),
+            AttributeValue::S(format!("user#{}", user_sign_up.email.clone())),
         )
         .key("sk", AttributeValue::S("none".into()))
         .send()
@@ -46,7 +46,7 @@ pub async fn handle_sign_up(event: Request) -> Result<impl IntoResponse, Error> 
         ));
     }
 
-    let _result = client
+    let save_user_request = client
         .put_item()
         .table_name("smartad")
         .item(
@@ -54,7 +54,7 @@ pub async fn handle_sign_up(event: Request) -> Result<impl IntoResponse, Error> 
             AttributeValue::S(format!("user#{}", user_sign_up.email)),
         )
         .item("sk", AttributeValue::S("none".into()))
-        .item("email", AttributeValue::S(user_sign_up.email))
+        .item("email", AttributeValue::S(user_sign_up.email.clone()))
         .item(
             "password",
             AttributeValue::S(hash(user_sign_up.password, DEFAULT_COST).unwrap()),
@@ -62,14 +62,22 @@ pub async fn handle_sign_up(event: Request) -> Result<impl IntoResponse, Error> 
         .send()
         .await;
 
-    //TODO: Generate confirmation code and save it
+    let code = generate_confirmation_code();
+
+    let _ = client
+        .put_item()
+        .table_name("smartad")
+        .item(
+            "pk",
+            AttributeValue::S(format!("confirmation_code#{}#{}", user_sign_up.email, code)),
+        )
+        .item("sk", AttributeValue::S("none".into()))
+        .send()
+        .await;
 
     Ok(response(
         StatusCode::CREATED,
-        json!(ConfirmationCode {
-            code: generate_confirmation_code()
-        })
-        .to_string(),
+        json!(ConfirmationCode { code }).to_string(),
     ))
 }
 
@@ -95,7 +103,6 @@ fn generate_confirmation_code() -> String {
 }
 
 fn generate_random_code_number(mut random: ThreadRng) -> String {
-    // let mut random = rand::thread_rng();
     random.gen_range(0..10).to_string()
 }
 
