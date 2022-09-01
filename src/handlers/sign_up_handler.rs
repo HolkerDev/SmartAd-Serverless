@@ -72,6 +72,8 @@ pub async fn handle_sign_up(event: Request) -> Result<impl IntoResponse, Error> 
             AttributeValue::S(format!("confirmation_code#{}#{}", user_sign_up.email, code)),
         )
         .item("sk", AttributeValue::S("none".into()))
+        .item("confirmation_code", AttributeValue::S(code.clone()))
+        .item("email", AttributeValue::S(user_sign_up.email.clone()))
         .send()
         .await;
 
