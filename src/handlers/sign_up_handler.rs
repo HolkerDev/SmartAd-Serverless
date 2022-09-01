@@ -2,12 +2,14 @@ use aws_sdk_dynamodb::model::AttributeValue;
 use aws_sdk_dynamodb::Client;
 use bcrypt::{hash, DEFAULT_COST};
 use lambda_http::http::StatusCode;
-use lambda_http::{Body, Error, IntoResponse, Request, RequestExt, Response};
+use lambda_http::{Error, IntoResponse, Request, RequestExt};
 use rand::rngs::ThreadRng;
 use rand::Rng;
 use serde_json::json;
 
 use crate::models::{ConfirmationCode, UserSignUp};
+
+use super::utils::response;
 
 pub async fn handle_sign_up(event: Request) -> Result<impl IntoResponse, Error> {
     let user_sign_up: UserSignUp = match event.payload() {
@@ -86,13 +88,6 @@ pub async fn handle_sign_up(event: Request) -> Result<impl IntoResponse, Error> 
 async fn init_db() -> Client {
     let shared_config = aws_config::load_from_env().await;
     Client::new(&shared_config)
-}
-
-fn response(status_code: StatusCode, json_string: String) -> Response<Body> {
-    Response::builder()
-        .status(status_code)
-        .body(Body::from(json_string))
-        .unwrap()
 }
 
 fn generate_confirmation_code() -> String {

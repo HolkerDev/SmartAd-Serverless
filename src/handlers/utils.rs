@@ -1,4 +1,5 @@
 use http::request::Request;
+use http::Response;
 use lambda_http::http::StatusCode;
 use lambda_http::Body;
 
@@ -20,5 +21,12 @@ pub fn request_new(json_body: String) -> Request<Body> {
             String::from("application/json"),
         )
         .body(Body::from(json_body))
+        .unwrap()
+}
+
+pub fn response(status_code: StatusCode, json_string: String) -> Response<Body> {
+    Response::builder()
+        .status(status_code)
+        .body(Body::from(json_string))
         .unwrap()
 }
