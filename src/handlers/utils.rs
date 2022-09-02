@@ -1,3 +1,4 @@
+use aws_sdk_dynamodb::Client;
 use http::request::Request;
 use http::Response;
 use lambda_http::http::StatusCode;
@@ -29,4 +30,9 @@ pub fn response(status_code: StatusCode, json_string: String) -> Response<Body> 
         .status(status_code)
         .body(Body::from(json_string))
         .unwrap()
+}
+
+pub async fn init_db() -> Client {
+    let shared_config = aws_config::load_from_env().await;
+    Client::new(&shared_config)
 }
